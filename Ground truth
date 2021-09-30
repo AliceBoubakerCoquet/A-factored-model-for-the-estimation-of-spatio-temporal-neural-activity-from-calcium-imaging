@@ -1,0 +1,278 @@
+import numpy as np
+from math import *
+import matplotlib.cm as cm
+from scipy.signal import convolve
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation  # FuncAnimation()
+import math
+from PIL import Image, ImageDraw
+from PIL import ImageFilter
+from PIL import ImageColor
+from pathlib import Path
+import random
+from matplotlib.patches import Ellipse
+import cv2
+from cv2 import VideoWriter, VideoWriter_fourcc, imread, resize
+import glob
+from skimage.util import random_noise
+
+# Functions
+## Creation of the signal
+
+def generate_signal(FR, tau_decay, Fs, noise_sigma, duration): #code de 1D du prof modulo rajout de l'amplitude
+    dt = 1 / Fs
+    N = int(duration / dt)
+    spikes = np.random.rand(N) < FR * dt
+    num_spikes = np.sum(spikes)
+    amplitudes = np.random.normal(loc=1, scale=0.5, size=(num_spikes,))
+    amplitudes[amplitudes<0.2] = 0.25
+    spike_train = np.zeros(spikes.shape)
+    spike_train[spikes==True] = amplitudes  
+    t = np.arange(-duration//2, duration//2, dt)
+    exponential = np.zeros_like(t)
+    exponential[t>=0] = np.exp(-t[t>=0]/tau_decay)
+    
+    q = np.zeros(spikes.shape)
+    j = 0
+    for i in range(np.size(spikes,axis=0)):
+        if spikes[i] == True:
+            q[i]= amplitudes[j]
+
+    
+    signal = convolve(spikes*q, exponential, mode='same')
+    time = np.arange(0, duration, dt)
+    return signal, spikes, time, num_spikes
+    
+
+## Values used
+FR = 1 # average firing rate over time
+tau_decay = 0.25 # true decay rate of exponentials
+Fs = 5 # sampling rate
+noise_sigma = 0.15 # STD of gaussian noise
+duration = 60 # full signal duration in seconds
+
+## We create 3 signals for the 3 cells
+signal_1, spikes_1, time_1, num_spikes_1 = generate_signal(FR, tau_decay, Fs, noise_sigma, duration)
+print('1: True number of spikes = {}'.format(num_spikes_1))
+print('1: Assumed number of spikes input to the method = {}'.format(int(FR*duration)))
+
+signal_2, spikes_2, time_2, num_spikes_2 = generate_signal(FR, tau_decay, Fs, noise_sigma, duration)
+print('2: True number of spikes = {}'.format(num_spikes_2))
+print('2: Assumed number of spikes input to the method = {}'.format(int(FR*duration)))
+
+signal_3, spikes_3, time_3, num_spikes_3 = generate_signal(FR, tau_decay, Fs, noise_sigma, duration)
+print('3: True number of spikes = {}'.format(num_spikes_3))
+print('3: Assumed number of spikes input to the method = {}'.format(int(FR*duration)))
+
+## Draw the signals
+fig, ax = plt.subplots(6,1, figsize=(10, 5))
+plt.gcf().subplots_adjust(left = 0.125, bottom = 0.1, right = 0.9, top = 0.9, wspace = 0.2, hspace = 2) 
+
+ax[0].plot(time_1, signal_1)
+ax[0].set_title('Raw Calcium Red')
+ax[1].stem(time_1, spikes_1, use_line_collection=True, markerfmt=" ", basefmt=" ")
+ax[1].set_title('True Spike Locations Red')
+
+ax[2].plot(time_2, signal_2)
+ax[2].set_title('Raw Calcium White')
+ax[3].stem(time_2, spikes_2, use_line_collection=True, markerfmt=" ", basefmt=" ")
+ax[3].set_title('True Spike Locations White')
+
+ax[4].plot(time_3, signal_3)
+ax[4].set_title('Raw Calcium Lime')
+ax[5].stem(time_3, spikes_3, use_line_collection=True, markerfmt=" ", basefmt=" ")
+ax[5].set_title('True Spike Locations Lime')
+
+## Creation of the picture
+def position_cells(pix_1,pix_2, horiz_1, vert_1, horiz_2, vert_2, horiz_3, vert_3):
+    # ellipse 1
+    x_1_1 = pix_1//2 
+    y_1_1 = pix_2//3 
+    
+    x_1_2 = x_1_1 + horiz_1
+    y_1_2 = y_1_1 + vert_1
+    
+    # ellipse 2
+    x_2_1 = random.randint(x_1_1-horiz_1+5, x_1_1+horiz_1-5) 
+    while abs(x_1_1-x_2_1)<3:
+         x_2_1 = random.randint(x_1_1-horiz_1+5, x_1_1+horiz_1-5) 
+    y_2_1 = y_1_1
+    
+    x_2_2 = x_2_1 + horiz_2
+    y_2_2 = y_2_1 + vert_2
+    
+    # ellipse 3
+    x_3_1 = random.randint(0,pix_1-horiz_3)
+    y_3_1 = random.randint(0,pix_2-vert_3)
+    
+    while  ((y_3_1 >(y_1_1-5) and y_3_1 < (y_1_2 + 5)) and (x_3_1> (x_1_1-horiz_3-5) and x_3_1<(x_1_2+5))) or ((y_3_1 >(y_2_1-5) and y_3_1 < (y_2_2 + 5)) and (x_3_1> (x_2_1-horiz_3-5) and x_3_1<(x_2_2+5))):
+        x_3_1 = random.randint(0,pix_1-horiz_3)
+        y_3_1 = random.randint(0,pix_2-vert_3)
+    
+    x_3_2 = x_3_1 + horiz_3
+    y_3_2 = y_3_1 + vert_3
+
+    return x_1_1,y_1_1,x_1_2,y_1_2, x_2_1,y_2_1,x_2_2,y_2_2, x_3_1,y_3_1,x_3_2,y_3_2
+    
+ def generate_image(pix_1, pix_2, x_1_1,y_1_1,x_1_2,y_1_2):
+    
+    # creating new Image object
+    w, h = pix_1, pix_2
+    img = Image.new("L", (w, h), "Black")
+    
+    # create image
+    img1 = ImageDraw.Draw(img)
+
+    img1.ellipse([(x_1_1,y_1_1),(x_1_2,y_1_2)], fill = 255 , outline = 255)
+    
+    img.show()
+    return img
+  
+  pix_1 = 50
+pix_2 = 50
+
+horiz_1 = 10
+vert_1 = 10
+
+horiz_1 = 8
+vert_1 = 10
+
+horiz_2 = 6
+vert_2 = 15
+
+horiz_3 = 15
+vert_3 = 5
+
+x_1_1,y_1_1,x_1_2,y_1_2, x_2_1,y_2_1,x_2_2,y_2_2, x_3_1,y_3_1,x_3_2,y_3_2 = position_cells(pix_1,pix_2, horiz_1, vert_1, horiz_2,vert_2 , horiz_3, vert_3)
+
+im_1 = generate_image(pix_1, pix_2, x_1_1,y_1_1,x_1_2,y_1_2)
+im_2 = generate_image(pix_1, pix_2, x_2_1,y_2_1,x_2_2,y_2_2)
+im_3 = generate_image(pix_1, pix_2, x_3_1,y_3_1,x_3_2,y_3_2)
+
+im_1.paste(im_2, None, im_2)
+im_1.paste(im_3, None, im_3)
+
+im_1.show()
+
+## Multiplication between the space and the time
+def mult_signal(im,signal):
+
+    im_array = np.array(im) #transforme l'image en tableau
+    im_array = im_array/255 #valeur entre 0 et 1
+    im_vect = np.concatenate(im_array) #met le tableau sous forme 1 x pixel_tot pour pouvoir le multiplier avec le signal
+    im_vect = np.array([im_vect]) #sinon je ne peux pas le transposer
+    im_vect = im_vect.T #tableau pixel_tot x 1 pour pouvoir le multiplier avec le signal
+    temp = im_vect*signal #multiplie le tableau avec le signal
+    r = temp.T #permet juste que 1 ligne = 1 image
+    r=r*255 #pour retrouver les nuances de gris sur image
+
+    return r
+ 
+## Add the components together without noise
+def add_comp_no_noise(r_1, r_2, r_3):
+    l_1= r_1.shape[0]
+   
+    
+    for i in range(l_1):
+        m_1 = r_1[i,].reshape(int(sqrt(r_1.shape[1])),int(sqrt(r_1.shape[1])))
+        m_1 = m_1.astype(np.uint8)
+        p_1=Image.fromarray(m_1)
+        p_1.convert('L')
+        
+        m_2 = r_2[i,].reshape(int(sqrt(r_1.shape[1])),int(sqrt(r_1.shape[1])))
+        m_2 = m_2.astype(np.uint8)
+        p_2=Image.fromarray(m_2)
+        p_2.convert('L')
+        
+        m_3 = r_3[i,].reshape(int(sqrt(r_1.shape[1])),int(sqrt(r_1.shape[1])))
+        m_3 = m_3.astype(np.uint8)
+        p_3=Image.fromarray(m_3)
+        p_3.convert('L')
+        
+        p_1.paste(p_2, None, p_2)
+        p_1.paste(p_3, None, p_3)
+        
+        t = "im" + 'pixel' + str(pix_1) + '-' + str(i)+ 'no' + '.png'
+        p_1.save(t, format='png')
+        
+    return
+
+## Add the components together with noise
+def add_comp_with_noise(r_1, r_2, r_3):
+    l_1= r_1.shape[0]
+   
+    
+    for i in range(l_1):
+        m_1 = r_1[i,].reshape(int(sqrt(r_1.shape[1])),int(sqrt(r_1.shape[1])))
+        m_1 = m_1.astype(np.uint8)
+        p_1=Image.fromarray(m_1)
+        p_1.convert('L')
+        
+        m_2 = r_2[i,].reshape(int(sqrt(r_1.shape[1])),int(sqrt(r_1.shape[1])))
+        m_2 = m_2.astype(np.uint8)
+        p_2=Image.fromarray(m_2)
+        p_2.convert('L')
+        
+        m_3 = r_3[i,].reshape(int(sqrt(r_1.shape[1])),int(sqrt(r_1.shape[1])))
+        m_3 = m_3.astype(np.uint8)
+        p_3=Image.fromarray(m_3)
+        p_3.convert('L')
+        
+        p_1.paste(p_2, None, p_2)
+        p_1.paste(p_3, None, p_3)
+        
+        t = "im"+ 'pixel' + str(pix_1) + '-' + str(i)+ 'with.png'
+        p_1.save(t, format='png')
+        
+        im_bis = Image.open(t)
+        # convert PIL Image to ndarray
+        im_arr = np.asarray(im_bis)
+
+        # random_noise() method will convert image in [0, 255] to [0, 1.0],
+        # inherently it use np.random.normal() to create normal distribution
+        # and adds the generated noised back to image
+        noise_img = random_noise(im_arr, mode='gaussian', var=0.06**2)
+        noise_img = (255*noise_img).astype(np.uint8)
+
+        img = Image.fromarray(noise_img)
+        img.save(t, format='png')
+
+        
+    return
+
+# Creation of the movie without noise
+# The images are already generated above
+
+r_1 = mult_signal(im_1, signal_1)
+r_2 = mult_signal(im_2, signal_2)
+r_3 = mult_signal(im_3, signal_3)
+
+add_comp_no_noise(r_1,r_2,r_3)
+
+frameSize = (pix_1, pix_2)
+
+out = cv2.VideoWriter('output_video.mp4',cv2.VideoWriter_fourcc(*'DIVX'), Fs, frameSize)
+
+for filename in glob.glob(r'C:\Users\Alice Boubaker\Documents\Projet de master\Python synthetic data\*no.png'):
+    img = cv2.imread(filename)
+    out.write(img)
+
+out.release()
+
+# Creation of the movie with noise
+# The images are already generated above
+
+r_1_noise = mult_signal(im_1, signal_1)
+r_2_noise = mult_signal(im_2, signal_2)
+r_3_noise = mult_signal(im_3, signal_3)
+
+add_comp_with_noise(r_1_noise,r_2_noise,r_3_noise)
+frameSize = (pix_1, pix_2)
+
+out = cv2.VideoWriter('output_video_noise.mp4',cv2.VideoWriter_fourcc(*'DIVX'), Fs, frameSize)
+
+for filename in glob.glob(r'C:\Users\Alice Boubaker\Documents\Projet de master\Python synthetic data\*with.png'):
+    img = cv2.imread(filename)
+    out.write(img)
+
+out.release()
