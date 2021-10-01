@@ -12,3 +12,69 @@ def proximal_mapping (X, lamb):
             X[i][j]=S_lamb(X[i][j], lamb)
 
     return X
+    
+    
+    def decomposition_cells (X, t, lamb_E, lamb_F, nb_cells):
+    E = np.random.rand(nb_cells,X.shape[1])
+    while np.linalg.norm(E) == 0:
+         E = np.random.rand(nb_celss, X.shape[1])
+    
+    
+    F =  np.random.rand(X.shape[0],nb_cells)
+    while np.linalg.norm(F) == 0:
+        F = np.random.rand(X.shape[0],nb_cells)
+
+    F = F*255 
+    
+    for i in range(nb_cells):
+        for j in range(X.shape[0]):
+            n = F[j][i]
+            if n>255/2:
+                F[j][i] = 255
+            else:
+                F[j][i] =0
+        
+    
+    i = 0
+    E_old = np.zeros((E.shape[0],E.shape[1]))
+    F_old = np.zeros((F.shape[0],F.shape[1]))
+  
+    while (np.linalg.norm(E) != 0 and np.linalg.norm(F) != 0) and np.linalg.norm(E-E_old,1)>t:# and np.linalg.norm(F-F_old,1)>t: # A CHANGER !!!!!
+            #print(i,',', np.linalg.norm(D))
+            E_old = E
+            n_E = 1/(np.linalg.norm(F)**2)
+
+            grad_E = np.dot(-F.T,X)+np.dot(np.dot(F.T,F),E)
+
+            tot_E = E-n_E*grad_E
+            E = proximal_mapping(tot_E, n_E*lamb_E)
+
+            #
+            F_old = F
+            n_F = 1/(np.linalg.norm(E)**2)
+
+            grad_F = np.dot(-X,E.T) + np.dot(np.dot(F,E),E.T)
+
+            tot_F = F - n_F*grad_F
+            F = proximal_mapping(tot_F, n_F*lamb_F)
+
+            i= i +1
+    #print(i)
+
+    A = np.random.rand(nb_cells,X.shape[1])
+    D = np.random.rand(X.shape[0],nb_cells)
+    
+    for i in range(nb_cells):
+        for q in range(X.shape[1]):
+            A[i][q] = E[i][q]*np.max(F[:,i])/255
+            if A[i][q]<0: #suppose the signal only positive
+                A[i][q]=0
+        for j in range(X.shape[0]):
+            n = F[j][i]/np.max(F[:,i])*255
+            if n>255/2:
+                D[j][i] = 255 #ceil(n)
+            else: 
+                D[j][i] = 0 #floor(n)
+        
+    
+    return A, D
