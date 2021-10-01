@@ -1,0 +1,14 @@
+def S_lamb (x, lamb):
+    if np.abs(x) <= lamb:
+        return 0
+    elif x> lamb:
+        return x-lamb
+    elif x<-lamb:
+        return x+lamb
+        
+def proximal_mapping (X, lamb):
+    for i in range(X.shape[0]):
+        for j in range(X.shape[1]):
+            X[i][j]=S_lamb(X[i][j], lamb)
+
+    return X
