@@ -16,8 +16,10 @@ from cv2 import VideoWriter, VideoWriter_fourcc, imread, resize
 import glob
 from skimage.util import random_noise
 
+'''
 # Functions
 ## Creation of the signal
+'''
 
 def generate_signal(FR, tau_decay, Fs, noise_sigma, duration): #code de 1D du prof modulo rajout de l'amplitude
     dt = 1 / Fs
