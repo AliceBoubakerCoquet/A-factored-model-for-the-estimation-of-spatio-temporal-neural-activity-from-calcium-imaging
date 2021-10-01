@@ -102,3 +102,52 @@ def proximal_mapping (X, lamb):
         
     
     return A, D
+    
+#=========================================================
+#=========================================================
+Test
+#=========================================================
+#=========================================================   
+
+A_test = np.array([signal_1,signal_2,signal_3])
+
+
+im_1_array = np.array(im_1) #transforme l'image en tableau
+im_1_array = np.concatenate(im_1_array)
+
+
+im_2_array = np.array(im_2) #transforme l'image en tableau
+im_2_array = np.concatenate(im_2_array)
+
+im_3_array = np.array(im_3) #transforme l'image en tableau
+im_3_array = np.concatenate(im_3_array)
+
+D_test = np.array([im_1_array.T,im_2_array.T,im_3_array.T]).T
+
+print(A_test.shape)
+print(D_test.shape)
+
+X_test = np.dot(D_test,A_test)
+X_test.shape
+
+I,J = decomposition_cells(X_test, 0.01, 4.2,0.01,3)
+
+q = 0
+for i in range(J.shape[0]):
+    for j in range(J.shape[1]):
+        if J[i][j] != D_test[i][j]:
+            #print('D=', J[i][j], ' vs Im=', D_test[i][j] )
+            q = q +1
+print(q,'fin')
+
+sum(J != D_test)
+
+for j in range(I.shape[0]):
+    q=0
+    for i in range(I.shape[1]):
+        if round(I[j][i],1) != round(A_test[j][i],1):
+            #print('A=', round(I[j][i],2), ' vs signal=', round(A_test[j][i],2) )
+            q = q +1
+    print(j,q)
+#print(q, 'fin')
+    
