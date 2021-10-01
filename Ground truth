@@ -118,7 +118,7 @@ def position_cells(pix_1,pix_2, horiz_1, vert_1, horiz_2, vert_2, horiz_3, vert_
     x_3_1 = random.randint(0,pix_1-horiz_3)
     y_3_1 = random.randint(0,pix_2-vert_3)
     
-    while  ((y_3_1 >(y_1_1-5) and y_3_1 < (y_1_2 + 5)) and (x_3_1> (x_1_1-horiz_3-5) and x_3_1<(x_1_2+5))) or ((y_3_1 >(y_2_1-5) and y_3_1 < (y_2_2 + 5)) and (x_3_1> (x_2_1-horiz_3-5) and x_3_1<(x_2_2+5))):
+    while  ((y_3_1 >(y_1_1-vert_3-5) and y_3_1 < (y_1_2 + 5)) and (x_3_1> (x_1_1-horiz_3-5) and x_3_1<(x_1_2+5))) or ((y_3_1 >(y_2_1-vert_3-5) and y_3_1 < (y_2_2 + 5)) and (x_3_1> (x_2_1-horiz_3-5) and x_3_1<(x_2_2+5))):
         x_3_1 = random.randint(0,pix_1-horiz_3)
         y_3_1 = random.randint(0,pix_2-vert_3)
     
@@ -162,10 +162,10 @@ im_1 = generate_image(pix_1, pix_2, x_1_1,y_1_1,x_1_2,y_1_2)
 im_2 = generate_image(pix_1, pix_2, x_2_1,y_2_1,x_2_2,y_2_2)
 im_3 = generate_image(pix_1, pix_2, x_3_1,y_3_1,x_3_2,y_3_2)
 
-im_1.paste(im_2, None, im_2)
-im_1.paste(im_3, None, im_3)
+im_3.paste(im_1, None, im_1)
+im_3.paste(im_2, None, im_2)
 
-im_1.show()
+im_3.show()
 
 #=========================================================
 ## Multiplication between the space and the time
@@ -206,11 +206,11 @@ def add_comp_no_noise(r_1, r_2, r_3):
         p_3=Image.fromarray(m_3)
         p_3.convert('L')
         
-        p_1.paste(p_2, None, p_2)
-        p_1.paste(p_3, None, p_3)
+        p_3.paste(p_1, None, p_1)
+        p_3.paste(p_2, None, p_2)
         
         t = "im" + 'pixel' + str(pix_1) + '-' + str(i)+ 'no' + '.png'
-        p_1.save(t, format='png')
+        p_3.save(t, format='png')
         
     return
 
@@ -237,11 +237,11 @@ def add_comp_with_noise(r_1, r_2, r_3):
         p_3=Image.fromarray(m_3)
         p_3.convert('L')
         
-        p_1.paste(p_2, None, p_2)
-        p_1.paste(p_3, None, p_3)
+        p_3.paste(p_1, None, p_1)
+        p_3.paste(p_2, None, p_2)
         
-        t = "im"+ 'pixel' + str(pix_1) + '-' + str(i)+ 'with.png'
-        p_1.save(t, format='png')
+        t = "im" + 'pixel' + str(pix_1) + '-' + str(i)+ 'with' + '.png'
+        p_3.save(t, format='png')
         
         im_bis = Image.open(t)
         # convert PIL Image to ndarray
