@@ -1,3 +1,27 @@
+import numpy as np
+from math import *
+import matplotlib.cm as cm
+from scipy.signal import convolve
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation  # FuncAnimation()
+import math
+from PIL import Image, ImageDraw
+from PIL import ImageFilter
+from PIL import ImageColor
+from pathlib import Path
+import random
+from matplotlib.patches import Ellipse
+import cv2
+from cv2 import VideoWriter, VideoWriter_fourcc, imread, resize
+import glob
+from skimage.util import random_noise
+
+#=========================================================
+#=========================================================
+Functions
+#=========================================================
+#=========================================================
+
 def S_lamb (x, lamb):
     if np.abs(x) <= lamb:
         return 0
