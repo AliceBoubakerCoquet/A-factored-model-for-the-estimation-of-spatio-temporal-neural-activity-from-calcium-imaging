@@ -162,10 +162,14 @@ im_1 = generate_image(pix_1, pix_2, x_1_1,y_1_1,x_1_2,y_1_2)
 im_2 = generate_image(pix_1, pix_2, x_2_1,y_2_1,x_2_2,y_2_2)
 im_3 = generate_image(pix_1, pix_2, x_3_1,y_3_1,x_3_2,y_3_2)
 
-im_3.paste(im_1, None, im_1)
-im_3.paste(im_2, None, im_2)
+img = Image.new("L", (pix_1, pix_2), "Black")
+img_4 = ImageDraw.Draw(img)
 
-im_3.show()
+img.paste(im_1, None, im_1)
+img.paste(im_2, None, im_2)
+img.paste(im_3, None, im_3)
+
+img.show()
 
 #=========================================================
 ## Multiplication between the space and the time
@@ -206,11 +210,14 @@ def add_comp_no_noise(r_1, r_2, r_3):
         p_3=Image.fromarray(m_3)
         p_3.convert('L')
         
-        p_3.paste(p_1, None, p_1)
-        p_3.paste(p_2, None, p_2)
+        img = Image.new("L", (pix_1, pix_2), "Black")
+        img.paste(p_1, None, p_1)
+        img.paste(p_2, None, p_2)
+        img.paste(p_3, None, p_3)
+        
         
         t = "im" + 'pixel' + str(pix_1) + '-' + str(i)+ 'no' + '.png'
-        p_3.save(t, format='png')
+        img.save(t, format='png')
         
     return
 
@@ -237,11 +244,13 @@ def add_comp_with_noise(r_1, r_2, r_3):
         p_3=Image.fromarray(m_3)
         p_3.convert('L')
         
-        p_3.paste(p_1, None, p_1)
-        p_3.paste(p_2, None, p_2)
+        img_f = Image.new("L", (pix_1, pix_2), "Black")
+        img_f.paste(p_1, None, p_1)
+        img_f.paste(p_2, None, p_2)
+        img_f.paste(p_3, None, p_3)
         
         t = "im" + 'pixel' + str(pix_1) + '-' + str(i)+ 'with' + '.png'
-        p_3.save(t, format='png')
+        img_f.save(t, format='png')
         
         im_bis = Image.open(t)
         # convert PIL Image to ndarray
